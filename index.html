@@ -10,7 +10,7 @@
   body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--ink);padding:16px;max-width:560px;margin:0 auto}
   h1{font-size:1.35rem;margin:8px 0 14px}
   h2{font-size:.9rem;margin:22px 0 8px;color:var(--mut)}
-  .stats{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:16px}
+  .stats{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:16px}
   .stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 6px;text-align:center}
   .stat b{display:block;font-size:1.25rem}
   .stat span{font-size:.7rem;color:var(--mut)}
@@ -81,10 +81,7 @@ function render(){
   dados.forEach(g=>{if(g.recebido)rec++;if(g.vendido)vend++;if(g.vendido&&!g.pago)divida++;});
   const stock=rec-vend;
   document.getElementById('stats').innerHTML=
-    '<div class="stat"><b>'+dados.length+'</b><span>Total</span></div>'+
-    '<div class="stat"><b>'+rec+'</b><span>Recebidos</span></div>'+
     '<div class="stat"><b>'+stock+'</b><span>Em stock</span></div>'+
-    '<div class="stat"><b>'+vend+'</b><span>Vendidos</span></div>'+
     '<div class="stat"><b>'+divida+'</b><span>Por pagar</span></div>';
   if(!dados.length){document.getElementById('lista').innerHTML='<div class="vazio">Ainda sem grelhadores registados.</div>';return;}
   document.getElementById('lista').innerHTML=dados.map(g=>{
