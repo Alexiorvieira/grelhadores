@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>🔧 Admin · Grelhadores</title>
+<style>
+  :root{--bg:#f6f4ef;--card:#fff;--ink:#1f2421;--mut:#7a8078;--line:#e7e3da;--ok:#2e7d4f;--acc:#c84b31;--blue:#23538c;}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--ink);padding:16px;max-width:760px;margin:0 auto}
+  h1{font-size:1.35rem;margin:8px 0 4px}
+  .sub{font-size:.8rem;color:var(--mut);margin-bottom:18px}
+  .sub a{color:var(--blue);text-decoration:none}
+  h2{font-size:.95rem;font-weight:700;margin:20px 0 10px;color:var(--mut);text-transform:uppercase;letter-spacing:.05em}
+
+  /* Stats */
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:20px}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 6px;text-align:center}
+  .stat b{display:block;font-size:1.25rem}
+  .stat span{font-size:.7rem;color:var(--mut)}
+
+  /* Botão principal */
+  .btn-add{display:inline-flex;align-items:center;gap:6px;background:var(--ink);color:#fff;border:none;border-radius:10px;padding:10px 18px;font-size:.88rem;font-weight:600;cursor:pointer;margin-bottom:16px}
+  .btn-add:hover{opacity:.85}
+
+  /* Tabela */
+  .tbl-wrap{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow-x:auto;margin-bottom:20px}
+  table{width:100%;border-collapse:collapse;font-size:.82rem}
+  th{text-align:left;padding:10px 12px;font-size:.72rem;color:var(--mut);border-bottom:1px solid var(--line);font-weight:600;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
+  td{padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
+  tr:last-child td{border-bottom:none}
+  tr:hover td{background:#fafaf7}
+  .nome-cell{font-weight:700}
+  .track-link{color:var(--blue);text-decoration:none;font-weight:600}
+  .chip{font-size:.68rem;padding:2px 8px;border-radius:99px;white-space:nowrap;font-weight:600}
+  .c-enc{background:#fdf3d7;color:#8a6207}
+  .c-env{background:#e3edf9;color:#23538c}
+  .c-done{background:#e3f3e9;color:#22663f}
+  .bool-yes{color:var(--ok);font-weight:700}
+  .bool-no{color:var(--line)}
+  .actions{display:flex;gap:6px}
+  .btn-edit,.btn-del{border:1px solid var(--line);background:#fafaf7;border-radius:8px;padding:5px 10px;font-size:.78rem;cursor:pointer;font-weight:600}
+  .btn-edit:hover{border-color:var(--blue);color:var(--blue)}
+  .btn-del:hover{border-color:var(--acc);color:var(--acc)}
+  .vazio{text-align:center;color:var(--mut);padding:30px;font-size:.85rem}
+  .erro{text-align:center;color:var(--acc);padding:30px;font-size:.85rem}
+
+  /* Modal */
+  .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:100;align-items:center;justify-content:center}
+  .overlay.open{display:flex}
+  .modal{background:var(--card);border-radius:18px;padding:24px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.18)}
+  .modal-title{font-size:1.05rem;font-weight:700;margin-bottom:18px}
+  .form-row{margin-bottom:14px}
+  label{display:block;font-size:.78rem;font-weight:600;color:var(--mut);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em}
+  input[type=text],input[type=date],select,textarea{width:100%;border:1px solid var(--line);border-radius:8px;padding:9px 11px;font-size:.88rem;background:#fafaf7;color:var(--ink);font-family:inherit}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue)}
+  textarea{resize:vertical;min-height:60px}
+  .form-checks{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:2px}
+  .check-item{display:flex;align-items:center;gap:8px;font-size:.85rem;padding:8px 10px;border:1px solid var(--line);border-radius:8px;cursor:pointer;background:#fafaf7}
+  .check-item input[type=checkbox]{width:16px;height:16px;accent-color:var(--ok);cursor:pointer}
+  .modal-actions{display:flex;gap:8px;margin-top:20px;justify-content:flex-end}
+  .btn-cancel{border:1px solid var(--line);background:#fafaf7;border-radius:10px;padding:9px 18px;font-size:.88rem;cursor:pointer;font-weight:600}
+  .btn-save{border:none;background:var(--ink);color:#fff;border-radius:10px;padding:9px 20px;font-size:.88rem;font-weight:600;cursor:pointer}
+  .btn-save:hover{opacity:.85}
+  .btn-cancel:hover{border-color:var(--ink)}
+
+  /* Modal delete */
+  .del-msg{font-size:.9rem;color:var(--mut);margin-bottom:20px;line-height:1.5}
+  .btn-confirm-del{border:none;background:var(--acc);color:#fff;border-radius:10px;padding:9px 20px;font-size:.88rem;font-weight:600;cursor:pointer}
+
+  /* Logs */
+  .logs{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:6px 14px}
+  .log{font-size:.78rem;padding:8px 0;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:10px}
+  .log:last-child{border-bottom:none}
+  .log .q{color:var(--mut);white-space:nowrap}
+
+  .reload{display:block;margin:18px auto 0;background:none;border:1px solid var(--line);border-radius:99px;padding:8px 22px;color:var(--mut);cursor:pointer;font-size:.85rem}
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1f2421;color:#fff;border-radius:99px;padding:10px 22px;font-size:.85rem;font-weight:600;opacity:0;transition:opacity .25s;pointer-events:none;z-index:200}
+  .toast.show{opacity:1}
+</style>
+</head>
+<body>
+<h1>🔧 Backoffice · Grelhadores</h1>
+<p class="sub">← <a href="index.html">Ver tracker</a></p>
+
+<div class="stats" id="stats"></div>
+
+<button class="btn-add" onclick="abrirModal()">＋ Adicionar grelhador</button>
+
+<div class="tbl-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Nome</th>
+        <th>Encomenda</th>
+        <th>Data</th>
+        <th>Tracking</th>
+        <th>Estado</th>
+        <th>Rec.</th>
+        <th>Vend.</th>
+        <th>Pago</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody id="tbody"><tr><td colspan="10" class="vazio">A carregar…</td></tr></tbody>
+  </table>
+</div>
+
+<h2>📜 Histórico</h2>
+<div class="logs" id="logs"><div class="vazio">A carregar…</div></div>
+<button class="reload" onclick="loadAll()">↻ Atualizar</button>
+
+<!-- Modal adicionar/editar -->
+<div class="overlay" id="overlay-form" onclick="fecharSeOverlay(event)">
+  <div class="modal">
+    <div class="modal-title" id="modal-title">Novo grelhador</div>
+    <div class="form-row">
+      <label>Nome</label>
+      <input type="text" id="f-nome" placeholder="ex: Grelhador #5">
+    </div>
+    <div class="form-row">
+      <label>Nº Encomenda</label>
+      <input type="text" id="f-nencomenda" placeholder="ex: 3073252805049415">
+    </div>
+    <div class="form-row">
+      <label>Data Encomenda</label>
+      <input type="date" id="f-data">
+    </div>
+    <div class="form-row">
+      <label>Tracking</label>
+      <input type="text" id="f-tracking" placeholder="ex: P3661150157">
+    </div>
+    <div class="form-row">
+      <label>Estado de envio</label>
+      <select id="f-envio">
+        <option value="Encomendado">🛒 Encomendado</option>
+        <option value="Enviado">🚚 Enviado</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <label>Notas internas</label>
+      <textarea id="f-notas" placeholder="ex: Confirmado e enviado a 26/05; entregue a 02/06"></textarea>
+    </div>
+    <div class="form-row">
+      <label>Flags</label>
+      <div class="form-checks">
+        <label class="check-item"><input type="checkbox" id="f-entregue"> 📬 Entregue</label>
+        <label class="check-item"><input type="checkbox" id="f-recebido"> 📦 Recebido</label>
+        <label class="check-item"><input type="checkbox" id="f-vendido"> 💰 Vendido</label>
+        <label class="check-item"><input type="checkbox" id="f-pago"> ✅ Pago</label>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="fecharModal('overlay-form')">Cancelar</button>
+      <button class="btn-save" onclick="guardar()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal confirmar delete -->
+<div class="overlay" id="overlay-del" onclick="fecharSeOverlay(event)">
+  <div class="modal">
+    <div class="modal-title">Eliminar grelhador</div>
+    <p class="del-msg" id="del-msg"></p>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="fecharModal('overlay-del')">Cancelar</button>
+      <button class="btn-confirm-del" onclick="confirmarDelete()">Eliminar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const BASE='https://zucoohmjcabdtvjvbmdn.supabase.co/rest/v1';
+const KEY='sb_publishable_2g8Pkk9Ieb1Z261wnm1K3g_zKV32Zr0';
+const H={'apikey':KEY,'Authorization':'Bearer '+KEY,'Content-Type':'application/json','Prefer':'return=representation'};
+
+let dados=[];
+let editId=null;
+let deleteId=null;
+
+function esc(s){return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+function fmtData(d){if(!d)return'—';const p=d.split('-');return p[2]+'/'+p[1]+'/'+p[0];}
+function fmtHora(ts){return new Date(ts).toLocaleString('pt-PT',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit',timeZone:'Europe/Lisbon'});}
+
+function toast(msg,err=false){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.style.background=err?'#c84b31':'#1f2421';
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+async function load(){
+  try{
+    const r=await fetch(BASE+'/grelhadores?select=*&order=data_encomenda.asc,id.asc',{headers:H});
+    if(!r.ok)throw new Error(r.status);
+    dados=await r.json();
+    renderStats();
+    renderTabela();
+  }catch(e){
+    document.getElementById('tbody').innerHTML='<tr><td colspan="10" class="erro">Erro a carregar dados.</td></tr>';
+  }
+}
+
+async function loadLogs(){
+  try{
+    const r=await fetch(BASE+'/logs?select=*&order=criado_em.desc&limit=50',{headers:H});
+    if(!r.ok)throw new Error(r.status);
+    const ls=await r.json();
+    document.getElementById('logs').innerHTML=ls.length
+      ?ls.map(l=>'<div class="log"><span>'+esc(l.evento)+'</span><span class="q">'+fmtHora(l.criado_em)+'</span></div>').join('')
+      :'<div class="vazio">Sem atividade.</div>';
+  }catch(e){
+    document.getElementById('logs').innerHTML='<div class="erro">Erro a carregar histórico.</div>';
+  }
+}
+
+function loadAll(){load();loadLogs();}
+
+function renderStats(){
+  let rec=0,vend=0,pago=0,divida=0;
+  dados.forEach(g=>{
+    if(g.recebido)rec++;
+    if(g.vendido)vend++;
+    if(g.pago)pago++;
+    if(g.vendido&&!g.pago)divida++;
+  });
+  document.getElementById('stats').innerHTML=
+    '<div class="stat"><b>'+dados.length+'</b><span>Total</span></div>'+
+    '<div class="stat"><b>'+rec+'</b><span>Recebidos</span></div>'+
+    '<div class="stat"><b>'+vend+'</b><span>Vendidos</span></div>'+
+    '<div class="stat"><b>'+divida+'</b><span>Por pagar</span></div>';
+}
+
+function renderTabela(){
+  if(!dados.length){
+    document.getElementById('tbody').innerHTML='<tr><td colspan="10" class="vazio">Nenhum grelhador registado.</td></tr>';
+    return;
+  }
+  document.getElementById('tbody').innerHTML=dados.map(g=>{
+    let chip=g.pago
+      ?'<span class="chip c-done">✓ Pago</span>'
+      :g.entregue
+        ?'<span class="chip c-done">📬 Entregue</span>'
+        :g.envio==='Enviado'
+          ?'<span class="chip c-env">🚚 Enviado</span>'
+          :'<span class="chip c-enc">🛒 Encomendado</span>';
+    const trk=g.tracking
+      ?'<a class="track-link" href="https://t.17track.net/pt#nums='+esc(g.tracking)+'" target="_blank">'+esc(g.tracking)+'</a>'
+      :'—';
+    const b=v=>'<span class="'+(v?'bool-yes':'bool-no')+'">'+(v?'✓':'–')+'</span>';
+    return '<tr>'+
+      '<td style="color:var(--mut);font-size:.75rem">'+g.id+'</td>'+
+      '<td class="nome-cell">'+esc(g.nome)+'</td>'+
+      '<td style="font-size:.75rem;color:var(--mut)">'+esc(g.n_encomenda||'—')+'</td>'+
+      '<td>'+fmtData(g.data_encomenda)+'</td>'+
+      '<td>'+trk+'</td>'+
+      '<td>'+chip+'</td>'+
+      '<td>'+b(g.recebido)+'</td>'+
+      '<td>'+b(g.vendido)+'</td>'+
+      '<td>'+b(g.pago)+'</td>'+
+      '<td><div class="actions">'+
+        '<button class="btn-edit" onclick="abrirEditar('+g.id+')">Editar</button>'+
+        '<button class="btn-del" onclick="abrirDelete('+g.id+')">✕</button>'+
+      '</div></td>'+
+    '</tr>';
+  }).join('');
+}
+
+function abrirModal(id=null){
+  editId=id;
+  const g=id?dados.find(x=>x.id===id):null;
+  document.getElementById('modal-title').textContent=g?'Editar '+g.nome:'Novo grelhador';
+  document.getElementById('f-nome').value=g?.nome||'';
+  document.getElementById('f-nencomenda').value=g?.n_encomenda||'';
+  document.getElementById('f-data').value=g?.data_encomenda||'';
+  document.getElementById('f-tracking').value=g?.tracking||'';
+  document.getElementById('f-envio').value=g?.envio||'Encomendado';
+  document.getElementById('f-notas').value=g?.notas||'';
+  document.getElementById('f-entregue').checked=!!g?.entregue;
+  document.getElementById('f-recebido').checked=!!g?.recebido;
+  document.getElementById('f-vendido').checked=!!g?.vendido;
+  document.getElementById('f-pago').checked=!!g?.pago;
+  document.getElementById('overlay-form').classList.add('open');
+}
+
+function abrirEditar(id){abrirModal(id);}
+
+function abrirDelete(id){
+  deleteId=id;
+  const g=dados.find(x=>x.id===id);
+  document.getElementById('del-msg').textContent='Tens a certeza que queres eliminar "'+g.nome+'"? Esta ação não pode ser desfeita.';
+  document.getElementById('overlay-del').classList.add('open');
+}
+
+function fecharModal(id){document.getElementById(id).classList.remove('open');}
+function fecharSeOverlay(e){if(e.target.classList.contains('overlay'))e.target.classList.remove('open');}
+
+async function guardar(){
+  const nome=document.getElementById('f-nome').value.trim();
+  const n_encomenda=document.getElementById('f-nencomenda').value.trim();
+  if(!nome){alert('O nome é obrigatório.');return;}
+  if(!n_encomenda){alert('O nº de encomenda é obrigatório.');return;}
+
+  const body={
+    nome,
+    n_encomenda,
+    data_encomenda:document.getElementById('f-data').value||null,
+    tracking:document.getElementById('f-tracking').value.trim()||null,
+    envio:document.getElementById('f-envio').value,
+    notas:document.getElementById('f-notas').value.trim()||null,
+    entregue:document.getElementById('f-entregue').checked,
+    recebido:document.getElementById('f-recebido').checked,
+    vendido:document.getElementById('f-vendido').checked,
+    pago:document.getElementById('f-pago').checked,
+  };
+
+  try{
+    let r;
+    if(editId){
+      r=await fetch(BASE+'/grelhadores?id=eq.'+editId,{method:'PATCH',headers:H,body:JSON.stringify(body)});
+    }else{
+      r=await fetch(BASE+'/grelhadores',{method:'POST',headers:H,body:JSON.stringify(body)});
+    }
+    if(!r.ok){
+      const err=await r.json().catch(()=>({}));
+      throw new Error(err.message||r.status);
+    }
+    fecharModal('overlay-form');
+    toast(editId?'Grelhador atualizado ✓':'Grelhador adicionado ✓');
+    loadAll();
+  }catch(e){
+    toast('Erro: '+e.message,true);
+  }
+}
+
+async function confirmarDelete(){
+  if(!deleteId)return;
+  try{
+    const r=await fetch(BASE+'/grelhadores?id=eq.'+deleteId,{method:'DELETE',headers:H});
+    if(!r.ok)throw new Error(r.status);
+    fecharModal('overlay-del');
+    toast('Grelhador eliminado.');
+    deleteId=null;
+    loadAll();
+  }catch(e){
+    toast('Erro ao eliminar: '+e.message,true);
+  }
+}
+
+loadAll();
+</script>
+</body>
+</html>
