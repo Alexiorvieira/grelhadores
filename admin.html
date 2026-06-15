@@ -70,9 +70,18 @@
 
   /* Logs */
   .logs{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:6px 14px}
-  .log{font-size:.78rem;padding:8px 0;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:10px}
+  .log{font-size:.78rem;padding:8px 0;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px}
   .log:last-child{border-bottom:none}
-  .log .q{color:var(--mut);white-space:nowrap}
+  .log .log-texto{flex:1}
+  .log .q{color:var(--mut);white-space:nowrap;font-size:.72rem}
+  .log-actions{display:flex;gap:4px;flex-shrink:0}
+  .btn-log-edit,.btn-log-del{border:1px solid var(--line);background:none;border-radius:6px;padding:2px 7px;font-size:.72rem;cursor:pointer;color:var(--mut)}
+  .btn-log-edit:hover{border-color:var(--blue);color:var(--blue)}
+  .btn-log-del:hover{border-color:var(--acc);color:var(--acc)}
+  .log-edit-wrap{display:flex;gap:6px;padding:6px 0;border-bottom:1px solid var(--line);align-items:center}
+  .log-edit-input{flex:1;border:1px solid var(--line);border-radius:6px;padding:5px 8px;font-size:.78rem;background:#fafaf7;color:var(--ink)}
+  .btn-log-save{border:none;background:var(--ok);color:#fff;border-radius:6px;padding:5px 10px;font-size:.75rem;font-weight:600;cursor:pointer}
+  .btn-log-cancel{border:1px solid var(--line);background:none;border-radius:6px;padding:5px 10px;font-size:.75rem;cursor:pointer}
 
   .reload{display:block;margin:18px auto 0;background:none;border:1px solid var(--line);border-radius:99px;padding:8px 22px;color:var(--mut);cursor:pointer;font-size:.85rem}
   .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1f2421;color:#fff;border-radius:99px;padding:10px 22px;font-size:.85rem;font-weight:600;opacity:0;transition:opacity .25s;pointer-events:none;z-index:200}
@@ -205,17 +214,65 @@ async function load(){
   }
 }
 
+let logsData=[];
+
 async function loadLogs(){
   try{
     const r=await fetch(BASE+'/logs?select=*&order=criado_em.desc&limit=50',{headers:H});
     if(!r.ok)throw new Error(r.status);
-    const ls=await r.json();
-    document.getElementById('logs').innerHTML=ls.length
-      ?ls.map(l=>'<div class="log"><span>'+esc(l.evento)+'</span><span class="q">'+fmtHora(l.criado_em)+'</span></div>').join('')
-      :'<div class="vazio">Sem atividade.</div>';
+    logsData=await r.json();
+    renderLogs();
   }catch(e){
     document.getElementById('logs').innerHTML='<div class="erro">Erro a carregar histórico.</div>';
   }
+}
+
+function renderLogs(){
+  document.getElementById('logs').innerHTML=logsData.length
+    ?logsData.map(l=>'<div class="log" id="log-'+l.id+'">'+
+        '<span class="log-texto">'+esc(l.evento)+'</span>'+
+        '<span class="q">'+fmtHora(l.criado_em)+'</span>'+
+        '<div class="log-actions">'+
+          '<button class="btn-log-edit" onclick="editarLog('+l.id+',this)">✏️</button>'+
+          '<button class="btn-log-del" onclick="eliminarLog('+l.id+')">✕</button>'+
+        '</div>'+
+      '</div>').join('')
+    :'<div class="vazio">Sem atividade.</div>';
+}
+
+function editarLog(id, btn){
+  const row=document.getElementById('log-'+id);
+  const l=logsData.find(x=>x.id===id);
+  row.outerHTML='<div class="log-edit-wrap" id="log-'+id+'">'+
+    '<input class="log-edit-input" id="log-input-'+id+'" value="'+esc(l.evento)+'">'+
+    '<button class="btn-log-save" onclick="guardarLog('+id+')">Guardar</button>'+
+    '<button class="btn-log-cancel" onclick="renderLogs()">Cancelar</button>'+
+  '</div>';
+  document.getElementById('log-input-'+id).focus();
+}
+
+async function guardarLog(id){
+  const val=document.getElementById('log-input-'+id).value.trim();
+  if(!val)return;
+  try{
+    const r=await fetch(BASE+'/logs?id=eq.'+id,{method:'PATCH',headers:H,body:JSON.stringify({evento:val})});
+    if(!r.ok)throw new Error(r.status);
+    const l=logsData.find(x=>x.id===id);
+    l.evento=val;
+    renderLogs();
+    toast('Log atualizado ✓');
+  }catch(e){toast('Erro: '+e.message,true);}
+}
+
+async function eliminarLog(id){
+  if(!confirm('Eliminar esta entrada do histórico?'))return;
+  try{
+    const r=await fetch(BASE+'/logs?id=eq.'+id,{method:'DELETE',headers:H});
+    if(!r.ok)throw new Error(r.status);
+    logsData=logsData.filter(x=>x.id!==id);
+    renderLogs();
+    toast('Log eliminado.');
+  }catch(e){toast('Erro: '+e.message,true);}
 }
 
 function loadAll(){load();loadLogs();}
